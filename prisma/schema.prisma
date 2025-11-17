@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserProfile {
+  id             String           @id @default(cuid())
+  name           String?
+  email          String?
+  phone          String?
+  location       String?
+  summary        String?
+  originalFileUrl String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  
+  workExperiences WorkExperience[]
+  educations      Education[]
+  skills          Skill[]
+  
+  @@map("user_profiles")
+}
+
+model WorkExperience {
+  id          String      @id @default(cuid())
+  company     String
+  role        String
+  startDate   String?
+  endDate     String?
+  description String?
+  achievements String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  
+  @@map("work_experiences")
+}
+
+model Education {
+  id         String      @id @default(cuid())
+  institution String
+  degree     String?
+  startDate  String?
+  endDate    String?
+  gpa        String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  
+  @@map("educations")
+}
+
+model Skill {
+  id          String      @id @default(cuid())
+  name        String
+  category    String?
+  proficiency String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  
+  @@map("skills")
+}
+
+model JobPosting {
+  id        String   @id @default(cuid())
+  title     String?
+  company   String?
+  rawText   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("job_postings")
+}
