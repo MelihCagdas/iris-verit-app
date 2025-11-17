@@ -29,12 +29,19 @@ export async function parseResumeFile(
   let text = '';
 
   if (ext === 'pdf') {
-    // Dynamic import for pdf-parse to avoid loading native deps during build
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pdfParse = require('pdf-parse');
-    const dataBuffer = await readFile(fullPath);
-    const pdfData = await pdfParse(dataBuffer);
-    text = pdfData.text;
+    try {
+      // Dynamic import for pdf-parse to avoid loading native deps during build
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const pdfParse = require('pdf-parse');
+      const dataBuffer = await readFile(fullPath);
+      const pdfData = await pdfParse(dataBuffer);
+      text = pdfData.text;
+    } catch (error: any) {
+      // If pdf-parse fails (e.g., in serverless environments), throw a helpful error
+      throw new Error(
+        `PDF parsing is not available in this environment. Error: ${error?.message || 'Unknown error'}`
+      );
+    }
   } else if (ext === 'docx' || ext === 'doc') {
     const dataBuffer = await readFile(fullPath);
     const result = await mammoth.extractRawText({ buffer: dataBuffer });

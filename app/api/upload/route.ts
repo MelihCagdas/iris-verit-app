@@ -4,6 +4,9 @@ import { parseResumeFile } from '@/lib/resumeParser';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 
+// Mark this route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
