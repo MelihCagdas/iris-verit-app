@@ -3,10 +3,6 @@ import { getFileExtension } from './fileStorage';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
-// Dynamic import for pdf-parse (CommonJS module)
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pdfParse = require('pdf-parse');
-
 export interface ParsedResume {
   text: string;
   personalInfo?: {
@@ -33,6 +29,9 @@ export async function parseResumeFile(
   let text = '';
 
   if (ext === 'pdf') {
+    // Dynamic import for pdf-parse to avoid loading native deps during build
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pdfParse = require('pdf-parse');
     const dataBuffer = await readFile(fullPath);
     const pdfData = await pdfParse(dataBuffer);
     text = pdfData.text;
