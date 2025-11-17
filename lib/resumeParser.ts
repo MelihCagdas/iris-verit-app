@@ -1,8 +1,10 @@
-import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import { getFileExtension } from './fileStorage';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+
+// Dynamic import for pdf-parse (CommonJS module)
+const pdfParse = require('pdf-parse');
 
 export interface ParsedResume {
   text: string;

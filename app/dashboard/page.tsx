@@ -136,20 +136,23 @@ export default function DashboardPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate PDF');
+        throw new Error('Failed to generate resume');
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'tailored-resume.pdf';
+      a.download = 'tailored-resume.html';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      
+      // Also open in new window for printing
+      window.open(url, '_blank');
     } catch (err: any) {
-      setError(err.message || 'Failed to export PDF');
+      setError(err.message || 'Failed to export resume');
     }
   };
 
@@ -273,7 +276,7 @@ export default function DashboardPage() {
                   onClick={handleExportPDF}
                   className="w-full mt-4 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
                 >
-                  📥 Export as PDF
+                  📥 Export Resume (HTML/Print)
                 </button>
               )}
             </div>
