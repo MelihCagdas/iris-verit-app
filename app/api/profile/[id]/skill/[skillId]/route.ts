@@ -3,14 +3,15 @@ import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; skillId: string } }
+  { params }: { params: Promise<{ id: string; skillId: string }> }
 ) {
   try {
+    const { skillId } = await params;
     const body = await request.json();
     const { name, category, proficiency } = body;
 
     const skill = await prisma.skill.update({
-      where: { id: params.skillId },
+      where: { id: skillId },
       data: {
         name,
         category,
@@ -30,11 +31,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; skillId: string } }
+  { params }: { params: Promise<{ id: string; skillId: string }> }
 ) {
   try {
+    const { skillId } = await params;
     await prisma.skill.delete({
-      where: { id: params.skillId },
+      where: { id: skillId },
     });
 
     return NextResponse.json({ success: true });

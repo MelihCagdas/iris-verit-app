@@ -3,14 +3,15 @@ import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; eduId: string } }
+  { params }: { params: Promise<{ id: string; eduId: string }> }
 ) {
   try {
+    const { eduId } = await params;
     const body = await request.json();
     const { institution, degree, startDate, endDate, gpa } = body;
 
     const education = await prisma.education.update({
-      where: { id: params.eduId },
+      where: { id: eduId },
       data: {
         institution,
         degree,
@@ -32,11 +33,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; eduId: string } }
+  { params }: { params: Promise<{ id: string; eduId: string }> }
 ) {
   try {
+    const { eduId } = await params;
     await prisma.education.delete({
-      where: { id: params.eduId },
+      where: { id: eduId },
     });
 
     return NextResponse.json({ success: true });

@@ -3,15 +3,16 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { company, role, startDate, endDate, description, achievements } = body;
 
     const experience = await prisma.workExperience.create({
       data: {
-        userProfileId: params.id,
+        userProfileId: id,
         company,
         role,
         startDate,
