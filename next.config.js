@@ -5,6 +5,9 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
   },
+  // Add empty turbopack config to silence the warning
+  // We still use webpack for server-side externals
+  turbopack: {},
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Externalize pdf-parse to avoid bundling native dependencies
