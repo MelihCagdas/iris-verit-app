@@ -7,6 +7,10 @@ export async function POST(request: NextRequest) {
     const user = await getServerUser();
 
     if (!user?.id) {
+      console.error('Preferences POST: No user found', { 
+        hasUser: !!user,
+        userId: user?.id 
+      });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -44,6 +48,10 @@ export async function GET(request: NextRequest) {
     const user = await getServerUser();
 
     if (!user?.id) {
+      console.error('Preferences GET: No user found', { 
+        hasUser: !!user,
+        userId: user?.id 
+      });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

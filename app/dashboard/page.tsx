@@ -53,7 +53,9 @@ export default function DashboardPage() {
       setUser(session.user);
 
       // Check if user needs to complete welcome screen
-      fetch('/api/user/preferences')
+      fetch('/api/user/preferences', {
+        credentials: 'include',
+      })
         .then((res) => res.json())
         .then((data) => {
           if (!data.preferences?.completedWelcome) {

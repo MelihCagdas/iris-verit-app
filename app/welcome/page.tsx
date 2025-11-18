@@ -41,7 +41,9 @@ const jobTypes = [
 
       setUser(session.user);
 
-      fetch('/api/user/preferences')
+      fetch('/api/user/preferences', {
+        credentials: 'include',
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.preferences?.completedWelcome) {
@@ -92,6 +94,7 @@ const jobTypes = [
       const response = await fetch('/api/user/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           jobTypes: selectedJobTypes,
           seniorityLevel,
