@@ -11,25 +11,10 @@ export async function GET(request: NextRequest) {
 
     const supabase = await getSupabaseDb();
 
-    // Fetch tailored resumes with related data
+    // Fetch tailored resumes
     const { data: resumes, error } = await supabase
       .from('tailored_resumes')
-      .select(`
-        *,
-        user_profiles:user_profile_id (
-          id,
-          name,
-          email,
-          created_at,
-          updated_at
-        ),
-        job_postings:job_posting_id (
-          id,
-          title,
-          company,
-          created_at
-        )
-      `)
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
