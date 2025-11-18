@@ -19,24 +19,7 @@ DATABASE_URL=postgres://...
 ```
 - Get this from Vercel Dashboard → Your Project → Storage → Postgres → Connection String
 
-### 2. NextAuth Authentication
-```
-NEXTAUTH_SECRET=your-secret-here
-NEXTAUTH_URL=https://iris-verit-app.vercel.app
-```
-- Generate a secret: Run `openssl rand -base64 32` in terminal
-- Copy the value from your local `.env` file (don't commit secrets!)
-- For `NEXTAUTH_URL`: Use your production URL: `https://iris-verit-app.vercel.app`
-
-### 3. Google OAuth
-```
-GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-```
-- Get these from: https://console.cloud.google.com/apis/credentials
-- Make sure redirect URI includes: `https://iris-verit-app.vercel.app/api/auth/callback/google`
-
-### 4. Supabase (for email/password auth)
+### 2. Supabase Authentication (handles both email/password and Google OAuth)
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
@@ -44,8 +27,11 @@ SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
 - Get these from: Supabase Dashboard → Settings → API
 - Copy from your local `.env` file (don't commit secrets!)
+- **Important**: Enable Google OAuth provider in Supabase Dashboard → Authentication → Providers → Google
+- Add redirect URL in Supabase: `https://iris-verit-app.vercel.app/auth/callback`
+- Add redirect URL in Google Console: `https://edpbwdvkmazrmvfgdrtb.supabase.co/auth/v1/callback`
 
-### 5. OpenAI
+### 3. OpenAI
 ```
 OPENAI_API_KEY=sk-proj-your-openai-api-key
 ```
@@ -67,11 +53,12 @@ OPENAI_API_KEY=sk-proj-your-openai-api-key
 
 ## Important Notes
 
-- **NEXTAUTH_URL**: Must match your production domain exactly
-- **NEXTAUTH_SECRET**: Must be the same across all environments
-- **Google OAuth**: Make sure redirect URIs in Google Console include:
-  - `https://iris-verit-app.vercel.app/api/auth/callback/google`
-- **Supabase**: Make sure email auth is enabled in Supabase dashboard
+- **Supabase**: 
+  - Make sure email auth is enabled in Supabase Dashboard → Authentication → Providers → Email
+  - Enable Google OAuth in Supabase Dashboard → Authentication → Providers → Google
+  - Add your Google OAuth credentials in Supabase (not in Vercel env vars)
+  - Redirect URL in Supabase: `https://iris-verit-app.vercel.app/auth/callback`
+  - Redirect URL in Google Console: `https://edpbwdvkmazrmvfgdrtb.supabase.co/auth/v1/callback`
 
 ---
 

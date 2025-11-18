@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { auth } from '@/lib/auth';
+import { getServerSession } from '@/lib/auth-server';
 import LogoutButton from './LogoutButton';
 
 export default async function Navbar() {
-  const session = await auth();
+  const session = await getServerSession();
 
   return (
     <nav className="border-b border-white/10 bg-gradient-to-r from-slate-950 via-indigo-950/80 via-violet-950/60 to-slate-950 backdrop-blur-sm text-slate-100">

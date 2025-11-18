@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getServerUser } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
+    const user = await getServerUser();
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -15,14 +15,14 @@ export async function POST(request: NextRequest) {
 
     // Upsert user preferences
     const preferences = await prisma.userPreferences.upsert({
-      where: { userId: session.user.id },
+      where: { userId: user.id },
       update: {
         jobTypes: jobTypes || [],
         seniorityLevel: seniorityLevel || null,
         completedWelcome: completedWelcome ?? true,
       },
       create: {
-        userId: session.user.id,
+        userId: user.id,
         jobTypes: jobTypes || [],
         seniorityLevel: seniorityLevel || null,
         completedWelcome: completedWelcome ?? true,
@@ -41,14 +41,14 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    const user = await getServerUser();
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const preferences = await prisma.userPreferences.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: user.id },
     });
 
     return NextResponse.json({ preferences });

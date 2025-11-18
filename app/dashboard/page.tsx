@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { supabase } from '@/lib/supabase-client';
+import type { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import ResumeTemplate from '@/components/ResumeTemplate';
 import { TailoredResume } from '@/lib/resumeTailor';
@@ -24,29 +25,34 @@ interface JobPosting {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
   const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [tailoredResume, setTailoredResume] = useState<TailoredResume | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validation, setValidation] = useState<any>(null);
   const [selectedProfile, setSelectedProfile] = useState<UserProfile | null>(null);
   const [checkingWelcome, setCheckingWelcome] = useState(true);
 
-  // Check if user needs to complete welcome screen
+  // Check authentication and welcome screen
   useEffect(() => {
-    if (status === 'loading') return;
-    
-    if (status === 'unauthenticated') {
-      router.push('/login');
-      return;
-    }
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    if (status === 'authenticated' && session?.user?.id) {
+      if (!session?.user) {
+        router.push('/login');
+        return;
+      }
+
+      setUser(session.user);
+
+      // Check if user needs to complete welcome screen
       fetch('/api/user/preferences')
         .then((res) => res.json())
         .then((data) => {
@@ -54,23 +60,39 @@ export default function DashboardPage() {
             router.push('/welcome');
           } else {
             setCheckingWelcome(false);
+            setLoading(false);
           }
         })
         .catch(() => {
-          // If check fails, still show dashboard but log error
           console.error('Failed to check welcome status');
           setCheckingWelcome(false);
+          setLoading(false);
         });
-    }
-  }, [status, session, router]);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   // Fetch data once welcome check is complete
   useEffect(() => {
-    if (!checkingWelcome && status === 'authenticated') {
+    if (!checkingWelcome && !loading && user) {
       fetchProfiles();
       fetchJobs();
     }
-  }, [checkingWelcome, status]);
+  }, [checkingWelcome, loading, user]);
 
   const fetchProfiles = async () => {
     try {
@@ -191,7 +213,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (checkingWelcome || status === 'loading') {
+  if (checkingWelcome || loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />

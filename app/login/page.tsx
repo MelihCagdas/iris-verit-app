@@ -1,8 +1,8 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-client';
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -13,8 +13,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleGoogleSignIn = () => {
-    void signIn('google', { callbackUrl: '/welcome' });
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/welcome`,
+        },
+      });
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      setError('Failed to sign in with Google');
+      setLoading(false);
+    }
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -23,58 +39,66 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const endpoint = isSignUp ? '/api/auth/signup' : '/api/auth/signin';
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name: isSignUp ? name : undefined }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Something went wrong');
-        setLoading(false);
-        return;
-      }
-
       if (isSignUp) {
+        // Sign up with Supabase
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name: name || email,
+            },
+          },
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          setLoading(false);
+          return;
+        }
+
         setError('');
         alert('Please check your email to verify your account before signing in.');
         setIsSignUp(false);
         setPassword('');
         setName('');
+        setLoading(false);
       } else {
-        // Sign in with NextAuth CredentialsProvider
-        const result = await signIn('credentials', {
+        // Sign in with Supabase
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
-          redirect: false,
         });
 
-        if (result?.error) {
-          setError(result.error);
+        if (signInError) {
+          setError(signInError.message);
           setLoading(false);
-        } else {
-          // Check if user needs to complete welcome screen
-          fetch('/api/user/preferences')
-            .then((res) => res.json())
-            .then((data) => {
-              if (!data.preferences?.completedWelcome) {
-                router.push('/welcome');
-              } else {
-                router.push('/dashboard');
-              }
-              router.refresh();
-            })
-            .catch(() => {
-              // If check fails, go to dashboard
-              router.push('/dashboard');
-              router.refresh();
-            });
+          return;
         }
+
+        if (!data.user?.email_confirmed_at) {
+          setError('Please verify your email before signing in');
+          setLoading(false);
+          return;
+        }
+
+        // Check if user needs to complete welcome screen
+        fetch('/api/user/preferences')
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.preferences?.completedWelcome) {
+              router.push('/welcome');
+            } else {
+              router.push('/dashboard');
+            }
+            router.refresh();
+          })
+          .catch(() => {
+            router.push('/dashboard');
+            router.refresh();
+          });
       }
-    } catch (err) {
+    } catch (err: any) {
       setError('An error occurred. Please try again.');
       setLoading(false);
     }
@@ -98,7 +122,8 @@ export default function LoginPage() {
           {/* Google OAuth */}
           <button
             onClick={handleGoogleSignIn}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path

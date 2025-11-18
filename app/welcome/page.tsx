@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { supabase } from '@/lib/supabase-client';
+import type { User } from '@supabase/supabase-js';
 
 const jobTypes = [
   'Software Engineering',
@@ -18,8 +19,8 @@ const jobTypes = [
 ];
 
   export default function WelcomePage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [seniorityLevel, setSeniorityLevel] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,18 @@ const jobTypes = [
 
   // Check if user has already completed welcome
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.id) {
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        router.push('/login');
+        return;
+      }
+
+      setUser(session.user);
+
       fetch('/api/user/preferences')
         .then((res) => res.json())
         .then((data) => {
@@ -41,12 +53,12 @@ const jobTypes = [
         .catch(() => {
           setCheckingPreferences(false);
         });
-    } else if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, session, router]);
+    };
 
-  if (checkingPreferences || status === 'loading') {
+    checkAuth();
+  }, [router]);
+
+  if (checkingPreferences || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
