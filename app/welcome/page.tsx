@@ -47,7 +47,7 @@ const jobTypes = [
         .then((res) => res.json())
         .then((data) => {
           if (data.preferences?.completedWelcome) {
-            router.push('/dashboard');
+            router.push('/');
           } else {
             setCheckingPreferences(false);
           }
@@ -107,7 +107,7 @@ const jobTypes = [
         throw new Error(data.error || 'Failed to save preferences');
       }
 
-      router.push('/dashboard');
+      router.push('/');
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
       setLoading(false);

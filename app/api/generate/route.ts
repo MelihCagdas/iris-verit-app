@@ -116,11 +116,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Save tailored resume to database
+    const { data: savedResume, error: saveError } = await supabase
+      .from('tailored_resumes')
+      .insert({
+        user_id: user.id,
+        user_profile_id: profileId,
+        job_posting_id: jobId,
+        tailored_data: tailored,
+      })
+      .select()
+      .single();
+
+    if (saveError) {
+      console.error('Error saving tailored resume:', saveError);
+      // Still return the tailored resume even if save fails
+    }
+
     return NextResponse.json({
       tailored,
       validation,
       profile: profileData,
       job: jobDescription,
+      savedResumeId: savedResume?.id,
     });
   } catch (error: any) {
     console.error('Error generating resume:', error);

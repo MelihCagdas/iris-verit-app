@@ -89,12 +89,12 @@ export default function LoginPage() {
             if (!data.preferences?.completedWelcome) {
               router.push('/welcome');
             } else {
-              router.push('/dashboard');
+              router.push('/');
             }
             router.refresh();
           })
           .catch(() => {
-            router.push('/dashboard');
+            router.push('/');
             router.refresh();
           });
       }
