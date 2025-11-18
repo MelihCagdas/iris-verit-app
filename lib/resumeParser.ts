@@ -1,7 +1,5 @@
 import mammoth from 'mammoth';
 import { getFileExtension } from './fileStorage';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
 
 export interface ParsedResume {
   text: string;
@@ -19,12 +17,11 @@ export interface ParsedResume {
   };
 }
 
-export async function parseResumeFile(
-  filepath: string,
+export async function parseResumeBuffer(
+  buffer: Buffer,
   filename: string
 ): Promise<ParsedResume> {
   const ext = getFileExtension(filename);
-  const fullPath = join(process.cwd(), filepath.replace('/uploads/', 'uploads/'));
 
   let text = '';
 
@@ -33,18 +30,15 @@ export async function parseResumeFile(
       // Dynamic import for pdf-parse to avoid loading native deps during build
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const pdfParse = require('pdf-parse');
-      const dataBuffer = await readFile(fullPath);
-      const pdfData = await pdfParse(dataBuffer);
+      const pdfData = await pdfParse(buffer);
       text = pdfData.text;
     } catch (error: any) {
-      // If pdf-parse fails (e.g., in serverless environments), throw a helpful error
       throw new Error(
         `PDF parsing is not available in this environment. Error: ${error?.message || 'Unknown error'}`
       );
     }
   } else if (ext === 'docx' || ext === 'doc') {
-    const dataBuffer = await readFile(fullPath);
-    const result = await mammoth.extractRawText({ buffer: dataBuffer });
+    const result = await mammoth.extractRawText({ buffer });
     text = result.value;
   } else {
     throw new Error(`Unsupported file type: ${ext}`);
