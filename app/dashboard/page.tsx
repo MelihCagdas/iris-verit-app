@@ -99,26 +99,43 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
+      console.log('Fetching dashboard data...');
+      
       // Fetch profiles
       const profilesRes = await fetch('/api/profile', {
         credentials: 'include',
       });
-      const profilesData = await profilesRes.json();
-      setProfiles(profilesData || []);
+      if (!profilesRes.ok) {
+        console.error('Failed to fetch profiles:', profilesRes.status, profilesRes.statusText);
+      } else {
+        const profilesData = await profilesRes.json();
+        console.log('Profiles fetched:', profilesData?.length || 0);
+        setProfiles(profilesData || []);
+      }
 
       // Fetch jobs
       const jobsRes = await fetch('/api/jobs', {
         credentials: 'include',
       });
-      const jobsData = await jobsRes.json();
-      setJobs(jobsData || []);
+      if (!jobsRes.ok) {
+        console.error('Failed to fetch jobs:', jobsRes.status, jobsRes.statusText);
+      } else {
+        const jobsData = await jobsRes.json();
+        console.log('Jobs fetched:', jobsData?.length || 0);
+        setJobs(jobsData || []);
+      }
 
       // Fetch tailored resumes
       const resumesRes = await fetch('/api/tailored-resumes', {
         credentials: 'include',
       });
-      if (resumesRes.ok) {
+      if (!resumesRes.ok) {
+        console.error('Failed to fetch tailored resumes:', resumesRes.status, resumesRes.statusText);
+        const errorData = await resumesRes.json().catch(() => ({}));
+        console.error('Error details:', errorData);
+      } else {
         const resumesData = await resumesRes.json();
+        console.log('Tailored resumes fetched:', resumesData?.length || 0);
         setTailoredResumes(resumesData || []);
       }
     } catch (error) {
@@ -148,7 +165,6 @@ export default function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-2 text-gray-600">Manage your resumes, job applications, and tailored resumes</p>
-          <p className="mt-1 text-xs text-gray-400">Dashboard Page Loaded</p>
         </div>
 
         {/* Stats Cards */}
