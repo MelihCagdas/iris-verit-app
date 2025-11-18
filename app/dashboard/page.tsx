@@ -148,6 +148,7 @@ export default function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-2 text-gray-600">Manage your resumes, job applications, and tailored resumes</p>
+          <p className="mt-1 text-xs text-gray-400">Dashboard Page Loaded</p>
         </div>
 
         {/* Stats Cards */}
