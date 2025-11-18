@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveFile, isValidResumeFile, getFileExtension } from '@/lib/fileStorage';
 import { parseResumeBuffer } from '@/lib/resumeParser';
-import { prisma } from '@/lib/prisma';
+import { getServerUser } from '@/lib/auth-server';
+import { getSupabaseDb } from '@/lib/supabase-db';
 import { randomUUID } from 'crypto';
 
 // Mark this route as dynamic to prevent static analysis during build
@@ -9,6 +10,11 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getServerUser();
+    if (!user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -34,76 +40,95 @@ export async function POST(request: NextRequest) {
     // Parse the resume
     const parsed = await parseResumeBuffer(buffer, filename);
 
-    // Create or update user profile
-    // For now, we'll create a new profile. In production, you'd link to authenticated user
-    const profile = await prisma.userProfile.create({
-      data: {
+    const supabase = await getSupabaseDb();
+
+    // Create user profile linked to authenticated user
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .insert({
+        user_id: user.id,
         name: parsed.personalInfo?.name || '',
         email: parsed.personalInfo?.email || '',
         phone: parsed.personalInfo?.phone || '',
         location: parsed.personalInfo?.location || '',
         summary: parsed.sections.summary || '',
-        originalFileUrl: fileUrl,
-      },
-    });
+        original_file_url: fileUrl,
+      })
+      .select()
+      .single();
+
+    if (profileError || !profile) {
+      throw profileError || new Error('Failed to create profile');
+    }
 
     // Create work experiences if parsed
     if (parsed.sections.experience && parsed.sections.experience.length > 0) {
-      // Simple parsing - in production, use LLM to extract structured data
-      for (const exp of parsed.sections.experience.slice(0, 10)) {
-        // Basic extraction - you'd want more sophisticated parsing here
-        await prisma.workExperience.create({
-          data: {
-            userProfileId: profile.id,
-            company: 'Extracted Company', // Would need better parsing
-            role: 'Extracted Role',
-            description: exp,
-          },
-        });
+      const experiences = parsed.sections.experience.slice(0, 10).map((exp) => ({
+        user_profile_id: profile.id,
+        company: 'Extracted Company', // Would need better parsing
+        role: 'Extracted Role',
+        description: exp,
+      }));
+
+      if (experiences.length > 0) {
+        await supabase.from('work_experiences').insert(experiences);
       }
     }
 
     // Create education entries
     if (parsed.sections.education && parsed.sections.education.length > 0) {
-      for (const edu of parsed.sections.education.slice(0, 5)) {
-        await prisma.education.create({
-          data: {
-            userProfileId: profile.id,
-            institution: 'Extracted Institution',
-            degree: edu,
-          },
-        });
+      const educations = parsed.sections.education.slice(0, 5).map((edu) => ({
+        user_profile_id: profile.id,
+        institution: 'Extracted Institution',
+        degree: edu,
+      }));
+
+      if (educations.length > 0) {
+        await supabase.from('educations').insert(educations);
       }
     }
 
     // Create skills
     if (parsed.sections.skills && parsed.sections.skills.length > 0) {
-      for (const skill of parsed.sections.skills.slice(0, 20)) {
-        await prisma.skill.create({
-          data: {
-            userProfileId: profile.id,
-            name: skill,
-          },
-        });
+      const skills = parsed.sections.skills.slice(0, 20).map((skill) => ({
+        user_profile_id: profile.id,
+        name: skill,
+      }));
+
+      if (skills.length > 0) {
+        await supabase.from('skills').insert(skills);
       }
     }
 
     // Fetch complete profile with relations
-    const completeProfile = await prisma.userProfile.findUnique({
-      where: { id: profile.id },
-      include: {
-        workExperiences: true,
-        educations: true,
-        skills: true,
-      },
-    });
+    const [experiences, educations, skills] = await Promise.all([
+      supabase
+        .from('work_experiences')
+        .select('*')
+        .eq('user_profile_id', profile.id),
+      supabase
+        .from('educations')
+        .select('*')
+        .eq('user_profile_id', profile.id),
+      supabase
+        .from('skills')
+        .select('*')
+        .eq('user_profile_id', profile.id),
+    ]);
+
+    const completeProfile = {
+      ...profile,
+      workExperiences: experiences.data || [],
+      educations: educations.data || [],
+      skills: skills.data || [],
+    };
 
     return NextResponse.json({
       success: true,
       profile: completeProfile,
       parsed,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error);
     return NextResponse.json(
       { error: 'Failed to process file' },

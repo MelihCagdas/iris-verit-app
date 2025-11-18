@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getServerUser } from '@/lib/auth-server';
+import { getSupabaseDb } from '@/lib/supabase-db';
 import { tailorResume, ProfileData, JobDescription } from '@/lib/resumeTailor';
 import { validateTailoredResume } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getServerUser();
+    if (!user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { profileId, jobId } = body;
 
@@ -15,26 +21,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch profile with all relations
-    const profile = await prisma.userProfile.findUnique({
-      where: { id: profileId },
-      include: {
-        workExperiences: true,
-        educations: true,
-        skills: true,
-      },
-    });
+    const supabase = await getSupabaseDb();
 
-    if (!profile) {
+    // Fetch profile with all relations
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', profileId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Fetch job posting
-    const job = await prisma.jobPosting.findUnique({
-      where: { id: jobId },
-    });
+    // Fetch relations
+    const [experiences, educations, skills, job] = await Promise.all([
+      supabase
+        .from('work_experiences')
+        .select('*')
+        .eq('user_profile_id', profileId),
+      supabase
+        .from('educations')
+        .select('*')
+        .eq('user_profile_id', profileId),
+      supabase
+        .from('skills')
+        .select('*')
+        .eq('user_profile_id', profileId),
+      supabase
+        .from('job_postings')
+        .select('*')
+        .eq('id', jobId)
+        .eq('user_id', user.id)
+        .single(),
+    ]);
 
-    if (!job) {
+    if (!job.data) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
@@ -45,24 +68,24 @@ export async function POST(request: NextRequest) {
       phone: profile.phone || undefined,
       location: profile.location || undefined,
       summary: profile.summary || undefined,
-      workExperiences: profile.workExperiences.map((exp) => ({
+      workExperiences: (experiences.data || []).map((exp: any) => ({
         id: exp.id,
         company: exp.company,
         role: exp.role,
-        startDate: exp.startDate || undefined,
-        endDate: exp.endDate || undefined,
+        startDate: exp.start_date || undefined,
+        endDate: exp.end_date || undefined,
         description: exp.description || undefined,
         achievements: exp.achievements || undefined,
       })),
-      educations: profile.educations.map((edu) => ({
+      educations: (educations.data || []).map((edu: any) => ({
         id: edu.id,
         institution: edu.institution,
         degree: edu.degree || undefined,
-        startDate: edu.startDate || undefined,
-        endDate: edu.endDate || undefined,
+        startDate: edu.start_date || undefined,
+        endDate: edu.end_date || undefined,
         gpa: edu.gpa || undefined,
       })),
-      skills: profile.skills.map((skill) => ({
+      skills: (skills.data || []).map((skill: any) => ({
         id: skill.id,
         name: skill.name,
         category: skill.category || undefined,
@@ -71,9 +94,9 @@ export async function POST(request: NextRequest) {
     };
 
     const jobDescription: JobDescription = {
-      title: job.title || undefined,
-      company: job.company || undefined,
-      rawText: job.rawText,
+      title: job.data.title || undefined,
+      company: job.data.company || undefined,
+      rawText: job.data.raw_text,
     };
 
     // Generate tailored resume

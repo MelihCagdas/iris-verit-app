@@ -13,13 +13,7 @@ Your build is failing because environment variables are missing in Vercel. Add t
 
 ## Required Environment Variables
 
-### 1. Database
-```
-DATABASE_URL=postgres://...
-```
-- Get this from Vercel Dashboard → Your Project → Storage → Postgres → Connection String
-
-### 2. Supabase Authentication (handles both email/password and Google OAuth)
+### 1. Supabase (handles authentication AND database)
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
@@ -27,11 +21,13 @@ SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
 - Get these from: Supabase Dashboard → Settings → API
 - Copy from your local `.env` file (don't commit secrets!)
-- **Important**: Enable Google OAuth provider in Supabase Dashboard → Authentication → Providers → Google
-- Add redirect URL in Supabase: `https://iris-verit-app.vercel.app/auth/callback`
-- Add redirect URL in Google Console: `https://edpbwdvkmazrmvfgdrtb.supabase.co/auth/v1/callback`
+- **Important**: 
+  - Enable Google OAuth provider in Supabase Dashboard → Authentication → Providers → Google
+  - Add redirect URL in Supabase: `https://iris-verit-app.vercel.app/auth/callback`
+  - Add redirect URL in Google Console: `https://edpbwdvkmazrmvfgdrtb.supabase.co/auth/v1/callback`
+  - **Run SQL migrations** in Supabase Dashboard → SQL Editor (see `SUPABASE_MIGRATION.md`)
 
-### 3. OpenAI
+### 2. OpenAI
 ```
 OPENAI_API_KEY=sk-proj-your-openai-api-key
 ```

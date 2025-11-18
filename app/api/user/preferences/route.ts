@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUser } from '@/lib/auth-server';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseDb } from '@/lib/supabase-db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,40 +17,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { jobTypes, seniorityLevel, completedWelcome } = body;
 
-    // First, ensure the User record exists in Prisma (for foreign key constraint)
-    await prisma.user.upsert({
-      where: { id: user.id },
-      update: {
-        email: user.email || undefined,
-        name: user.user_metadata?.name || user.email || undefined,
-        image: user.user_metadata?.avatar_url || undefined,
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : undefined,
-      },
-      create: {
-        id: user.id,
-        email: user.email || undefined,
-        name: user.user_metadata?.name || user.email || undefined,
-        image: user.user_metadata?.avatar_url || undefined,
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : undefined,
-        provider: 'supabase',
-      },
-    });
+    const supabase = await getSupabaseDb();
 
     // Upsert user preferences
-    const preferences = await prisma.userPreferences.upsert({
-      where: { userId: user.id },
-      update: {
-        jobTypes: jobTypes || [],
-        seniorityLevel: seniorityLevel || null,
-        completedWelcome: completedWelcome ?? true,
-      },
-      create: {
-        userId: user.id,
-        jobTypes: jobTypes || [],
-        seniorityLevel: seniorityLevel || null,
-        completedWelcome: completedWelcome ?? true,
-      },
-    });
+    const { data: preferences, error } = await supabase
+      .from('user_preferences')
+      .upsert({
+        user_id: user.id,
+        job_types: jobTypes || [],
+        seniority_level: seniorityLevel || null,
+        completed_welcome: completedWelcome ?? true,
+      }, {
+        onConflict: 'user_id',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
 
     return NextResponse.json({ success: true, preferences });
   } catch (error: any) {
@@ -80,30 +66,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Ensure User record exists (for foreign key constraint)
-    await prisma.user.upsert({
-      where: { id: user.id },
-      update: {
-        email: user.email || undefined,
-        name: user.user_metadata?.name || user.email || undefined,
-        image: user.user_metadata?.avatar_url || undefined,
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : undefined,
-      },
-      create: {
-        id: user.id,
-        email: user.email || undefined,
-        name: user.user_metadata?.name || user.email || undefined,
-        image: user.user_metadata?.avatar_url || undefined,
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : undefined,
-        provider: 'supabase',
-      },
-    });
+    const supabase = await getSupabaseDb();
 
-    const preferences = await prisma.userPreferences.findUnique({
-      where: { userId: user.id },
-    });
+    const { data: preferences, error } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
 
-    return NextResponse.json({ preferences });
+    if (error && error.code !== 'PGRST116') { // PGRST116 = not found, which is OK
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    return NextResponse.json({ preferences: preferences || null });
   } catch (error: any) {
     console.error('Get preferences error:', error);
     return NextResponse.json(
