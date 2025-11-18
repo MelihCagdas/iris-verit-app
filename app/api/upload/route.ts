@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveFile, isValidResumeFile, getFileExtension } from '@/lib/fileStorage';
-import { parseResumeFile } from '@/lib/resumeParser';
+import { parseResumeBuffer } from '@/lib/resumeParser';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 
@@ -23,13 +23,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
     // Generate unique filename
     const ext = getFileExtension(file.name);
     const filename = `${randomUUID()}.${ext}`;
-    const fileUrl = await saveFile(file, filename);
+    const fileUrl = await saveFile(buffer, filename);
 
     // Parse the resume
-    const parsed = await parseResumeFile(fileUrl, filename);
+    const parsed = await parseResumeBuffer(buffer, filename);
 
     // Create or update user profile
     // For now, we'll create a new profile. In production, you'd link to authenticated user

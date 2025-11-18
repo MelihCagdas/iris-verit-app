@@ -2,21 +2,27 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-const UPLOAD_DIR = join(process.cwd(), 'uploads');
+const getUploadDir = () => {
+  if (process.env.VERCEL) {
+    return '/tmp/uploads';
+  }
+  return join(process.cwd(), 'uploads');
+};
 
 export async function ensureUploadDir() {
-  if (!existsSync(UPLOAD_DIR)) {
-    await mkdir(UPLOAD_DIR, { recursive: true });
+  const dir = getUploadDir();
+  if (!existsSync(dir)) {
+    await mkdir(dir, { recursive: true });
   }
+  return dir;
 }
 
-export async function saveFile(file: File, filename: string): Promise<string> {
-  await ensureUploadDir();
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  const filepath = join(UPLOAD_DIR, filename);
+export async function saveFile(buffer: Buffer, filename: string): Promise<string> {
+  const uploadDir = await ensureUploadDir();
+  const filepath = join(uploadDir, filename);
   await writeFile(filepath, buffer);
-  return `/uploads/${filename}`;
+
+  return process.env.VERCEL ? filename : `/uploads/${filename}`;
 }
 
 export function getFileExtension(filename: string): string {

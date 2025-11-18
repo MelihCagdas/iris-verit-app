@@ -1,5 +1,11 @@
 import { PrismaClient } from '../generated/prisma/client';
 
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    'DATABASE_URL is not defined. Please set it to a Postgres connection string in your environment or .env file.'
+  );
+}
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
