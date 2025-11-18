@@ -53,12 +53,14 @@ export const supabase = new Proxy({} as SupabaseClient, {
 });
 
 // Admin client for server-side operations (uses service role key) - lazy initialization
-export const supabaseAdmin = new Proxy({} as SupabaseClient | null, {
+export const supabaseAdmin: SupabaseClient | null = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
     const client = getSupabaseAdminClient();
-    if (!client) return null;
+    if (!client) {
+      return null;
+    }
     const value = (client as any)[prop];
     return typeof value === 'function' ? value.bind(client) : value;
   },
-});
+}) as SupabaseClient | null;
 
