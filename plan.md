@@ -46,3 +46,11 @@
 6. Let the AI agent prompt for clarification if requirements are unclear—never proceed on hallucinated/fake data.
 
 ***
+
+### 3. **Milestone 1 – Authentication**
+
+- [x] Add NextAuth with Google, LinkedIn, Facebook providers and Prisma adapter
+- [x] Extend Prisma schema with `User`, `Account`, `Session`, `VerificationToken`
+- [x] Protect `/dashboard` and `/generate` via middleware + JWT sessions
+- [x] Ship `/login` UI and navbar logout
+- [ ] Follow-up: connect authenticated users to profile workflows & job data

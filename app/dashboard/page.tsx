@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import ResumeTemplate from '@/components/ResumeTemplate';
 import { TailoredResume } from '@/lib/resumeTailor';
@@ -22,6 +24,8 @@ interface JobPosting {
 }
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
@@ -31,11 +35,42 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [validation, setValidation] = useState<any>(null);
   const [selectedProfile, setSelectedProfile] = useState<UserProfile | null>(null);
+  const [checkingWelcome, setCheckingWelcome] = useState(true);
 
+  // Check if user needs to complete welcome screen
   useEffect(() => {
-    fetchProfiles();
-    fetchJobs();
-  }, []);
+    if (status === 'loading') return;
+    
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user?.id) {
+      fetch('/api/user/preferences')
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.preferences?.completedWelcome) {
+            router.push('/welcome');
+          } else {
+            setCheckingWelcome(false);
+          }
+        })
+        .catch(() => {
+          // If check fails, still show dashboard but log error
+          console.error('Failed to check welcome status');
+          setCheckingWelcome(false);
+        });
+    }
+  }, [status, session, router]);
+
+  // Fetch data once welcome check is complete
+  useEffect(() => {
+    if (!checkingWelcome && status === 'authenticated') {
+      fetchProfiles();
+      fetchJobs();
+    }
+  }, [checkingWelcome, status]);
 
   const fetchProfiles = async () => {
     try {
@@ -155,6 +190,14 @@ export default function DashboardPage() {
       setError(err.message || 'Failed to export resume');
     }
   };
+
+  if (checkingWelcome || status === 'loading') {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

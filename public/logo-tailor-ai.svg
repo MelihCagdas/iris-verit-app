@@ -1,0 +1,26 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Job Board Background -->
+  <rect x="8" y="12" width="48" height="40" rx="4" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+  
+  <!-- Job Board Lines (representing job listings) -->
+  <line x1="16" y1="24" x2="48" y2="24" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="16" y1="32" x2="48" y2="32" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="16" y1="40" x2="48" y2="40" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Tailor Needle (modern, sleek design) -->
+  <!-- Needle shaft -->
+  <path d="M32 8 L32 20" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Needle eye (top) -->
+  <circle cx="32" cy="10" r="2" fill="#6366f1"/>
+  
+  <!-- Needle point (bottom) -->
+  <path d="M28 16 L32 20 L36 16" stroke="#6366f1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Thread (subtle, connecting needle to board) -->
+  <path d="M32 20 Q32 22 32 24" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+  
+  <!-- Highlight on needle for modern look -->
+  <path d="M30 10 L30 18" stroke="#a5b4fc" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+</svg>
+

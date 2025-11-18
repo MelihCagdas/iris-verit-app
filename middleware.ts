@@ -1,0 +1,27 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+
+const PROTECTED_ROUTES = ['/dashboard', '/generate'];
+
+export async function middleware(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+
+  const isProtected = PROTECTED_ROUTES.some((path) => request.nextUrl.pathname.startsWith(path));
+
+  if (!token && isProtected) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Note: Welcome screen redirect is handled client-side in the welcome page component
+  // to avoid database calls in middleware (better for Capacitor compatibility)
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*', '/generate/:path*'],
+};
+

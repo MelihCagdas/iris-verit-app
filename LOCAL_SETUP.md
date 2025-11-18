@@ -16,7 +16,35 @@ DATABASE_URL="postgresql://user:password@host:5432/database"
 
 # OpenAI API Key (required)
 OPENAI_API_KEY="your-openai-api-key-here"
+
+# NextAuth + OAuth providers
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="changeme-local-secret"
+
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+
+# Supabase (for email/password authentication)
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
+
+### Step 1.5: Configure Supabase Email Templates (Optional but Recommended)
+
+To customize your signup/verification emails with Tailor AI branding:
+
+1. Go to your Supabase Dashboard → **Authentication → Email Templates**
+2. Open the file `supabase-email-templates.md` in this project
+3. Copy each template's HTML and paste it into the corresponding Supabase template:
+   - **Confirm signup** → Use "Confirm Signup Email Template"
+   - **Magic Link** → Use "Magic Link Email Template"
+   - **Change Email Address** → Use "Change Email Address Template"
+   - **Reset Password** → Use "Reset Password Template"
+4. Update the subject lines as provided in the template file
+5. Click **Save** for each template
+
+This will make your authentication emails match your Tailor AI branding with the modern tailor needle logo and professional copy.
 
 ### Step 2: Generate Prisma Client
 
