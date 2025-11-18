@@ -58,19 +58,44 @@ export default function DashboardPage() {
       fetch('/api/user/preferences', {
         credentials: 'include',
       })
-        .then((res) => res.json())
+        .then(async (res) => {
+          if (!res.ok) {
+            console.error('Preferences API error:', res.status, res.statusText);
+            const errorData = await res.json().catch(() => ({}));
+            console.error('Error details:', errorData);
+            // If unauthorized, redirect to login
+            if (res.status === 401) {
+              router.push('/login');
+              return;
+            }
+            // For other errors, assume welcome not completed
+            router.push('/welcome');
+            return;
+          }
+          return res.json();
+        })
         .then((data) => {
-          if (!data.preferences?.completedWelcome) {
+          if (!data) return; // Already handled error above
+          
+          console.log('Preferences check result:', {
+            hasPreferences: !!data.preferences,
+            completedWelcome: data.preferences?.completed_welcome,
+            allData: data
+          });
+          
+          if (!data.preferences || !data.preferences.completed_welcome) {
+            console.log('Redirecting to welcome - preferences not completed');
             router.push('/welcome');
           } else {
+            console.log('Welcome completed, showing dashboard');
             setCheckingWelcome(false);
             setLoading(false);
           }
         })
-        .catch(() => {
-          console.error('Failed to check welcome status');
-          setCheckingWelcome(false);
-          setLoading(false);
+        .catch((error) => {
+          console.error('Failed to check welcome status:', error);
+          // On error, redirect to welcome to be safe
+          router.push('/welcome');
         });
     };
 

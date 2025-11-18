@@ -46,7 +46,7 @@ const jobTypes = [
       })
         .then((res) => res.json())
         .then((data) => {
-          if (data.preferences?.completedWelcome) {
+          if (data.preferences?.completed_welcome) {
             router.push('/');
           } else {
             setCheckingPreferences(false);

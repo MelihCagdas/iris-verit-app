@@ -83,10 +83,12 @@ export default function LoginPage() {
         }
 
         // Check if user needs to complete welcome screen
-        fetch('/api/user/preferences')
+        fetch('/api/user/preferences', {
+          credentials: 'include',
+        })
           .then((res) => res.json())
           .then((data) => {
-            if (!data.preferences?.completedWelcome) {
+            if (!data.preferences?.completed_welcome) {
               router.push('/welcome');
             } else {
               router.push('/');
