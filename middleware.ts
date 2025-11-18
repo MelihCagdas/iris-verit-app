@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 
 const PROTECTED_ROUTES = ['/dashboard', '/generate'];
 
@@ -13,10 +13,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
         return request.cookies.get(name)?.value;
+      },
+      set(name: string, value: string, options: any) {
+        request.cookies.set(name, value);
+      },
+      remove(name: string, options: any) {
+        request.cookies.delete(name);
       },
     },
   });
